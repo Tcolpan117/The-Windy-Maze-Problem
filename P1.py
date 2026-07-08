@@ -1,11 +1,5 @@
 import heapq
 
-# Maze setup
-# [] = open square
-# ## = obstacle
-# 00 = start
-# GG = goal
-
 ROWS = 5
 COLS = 6
 
@@ -18,8 +12,9 @@ obstacles = {
     (3, 1)
 }
 
-# Move order required by the assignment:
+# Move order:
 # west, north, east, south
+# Labels are direction label, change in position, and cost of move
 moves = [
     ("W", (0, -1), 1),
     ("N", (-1, 0), 2),
@@ -28,47 +23,60 @@ moves = [
 ]
 
 
-def heuristic(pos):
-    """
-    Modified Manhattan distance using windy movement costs.
-    West = 1
-    North/South = 2
-    East = 3
-    """
-    r, c = pos
-    gr, gc = goal
+def heuristic(position):
+    row, col = position
+    goal_row, goal_col = goal
 
-    vertical_cost = abs(gr - r) * 2
+    vertical_cost = abs(goal_row - row) * 2
 
-    if gc > c:
-        horizontal_cost = (gc - c) * 3
+    if goal_col > col:
+        horizontal_cost = (goal_col - col) * 3
     else:
-        horizontal_cost = (c - gc) * 1
+        horizontal_cost = (col - goal_col) * 1
 
     return vertical_cost + horizontal_cost
 
 
-def is_valid(pos):
-    r, c = pos
+def is_valid(position):
+    row, col = position
 
-    if r < 0 or r >= ROWS:
+    if row < 0 or row >= ROWS:
         return False
 
-    if c < 0 or c >= COLS:
+    if col < 0 or col >= COLS:
         return False
 
-    if pos in obstacles:
+    if position in obstacles:
         return False
 
     return True
 
 
-def a_star():
+def print_maze(labels):
+    for row in range(ROWS):
+        line = []
+
+        for col in range(COLS):
+            position = (row, col)
+
+            if position in obstacles:
+                line.append("##")
+            elif position == goal:
+                line.append("GG")
+            elif position in labels:
+                line.append(f"{labels[position]:02d}")
+            else:
+                line.append("[]")
+
+        print(" ".join(line))
+
+
+def a_star_search():
     frontier = []
     explored = set()
 
     labels = {start: 0}
-    g_cost = {start: 0}
+    goal_cost = {start: 0}
 
     next_label = 1
 
@@ -76,6 +84,9 @@ def a_star():
     heapq.heappush(frontier, (heuristic(start), 0, start))
 
     search_steps = []
+    
+    print('\n')
+    print("Searching...")
 
     while frontier:
         f, label, current = heapq.heappop(frontier)
@@ -88,7 +99,7 @@ def a_star():
         search_steps.append({
             "label": label,
             "position": current,
-            "g": g_cost[current],
+            "g": goal_cost[current],
             "h": heuristic(current),
             "f": f
         })
@@ -102,57 +113,28 @@ def a_star():
                 current[1] + change[1]
             )
 
-            if not is_valid(new_pos):
+            if not is_valid(new_pos) or new_pos in explored or new_pos in labels:
                 continue
 
-            if new_pos in explored:
-                continue
-
-            if new_pos in labels:
-                continue
 
             labels[new_pos] = next_label
-            g_cost[new_pos] = g_cost[current] + move_cost
+            goal_cost[new_pos] = goal_cost[current] + move_cost
 
-            new_f = g_cost[new_pos] + heuristic(new_pos)
+            new_f = goal_cost[new_pos] + heuristic(new_pos)
 
             heapq.heappush(frontier, (new_f, next_label, new_pos))
 
             next_label += 1
 
-    return labels, search_steps
+        print('\n')
+        print_maze(labels)
+        print(
+            f"Label {search_steps[-1]['label']:02d}: "
+            f"Position {search_steps[-1]['position']}, "
+            f"g={search_steps[-1]['g']}, "
+            f"h={search_steps[-1]['h']}, "
+            f"f={search_steps[-1]['f']}"
+        )
 
 
-def print_final_maze(labels):
-    for r in range(ROWS):
-        row = []
-
-        for c in range(COLS):
-            pos = (r, c)
-
-            if pos in obstacles:
-                row.append("##")
-            elif pos == goal:
-                row.append("GG")
-            elif pos in labels:
-                row.append(f"{labels[pos]:02d}")
-            else:
-                row.append("[]")
-
-        print(" ".join(row))
-
-
-labels, steps = a_star()
-
-print("Search Steps:")
-for step in steps:
-    print(
-        f"Label {step['label']:02d}: "
-        f"Position {step['position']}, "
-        f"g={step['g']}, "
-        f"h={step['h']}, "
-        f"f={step['f']}"
-    )
-
-print("\nFinal Maze:")
-print_final_maze(labels)
+a_star_search()
