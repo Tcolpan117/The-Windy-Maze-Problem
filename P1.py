@@ -156,3 +156,5 @@ for step in steps:
 
 print("\nFinal Maze:")
 print_final_maze(labels)
+
+#asdfghjk
