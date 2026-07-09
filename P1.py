@@ -1,3 +1,10 @@
+#CIS-479 Project 1 (Group 2)
+#Windy Maze Problem
+
+#Members:
+#Taylan Colpan
+#Gustavo Abreu
+
 import heapq
 
 ROWS = 5
@@ -12,16 +19,13 @@ obstacles = {
     (3, 1)
 }
 
-# Move order:
-# west, north, east, south
-# Labels are direction label, change in position, and cost of move
+# Direction label, change in position, and cost of move
 moves = [
     ("W", (0, -1), 1),
     ("N", (-1, 0), 2),
     ("E", (0, 1), 3),
     ("S", (1, 0), 2)
 ]
-
 
 def heuristic(position):
     row, col = position
@@ -34,8 +38,8 @@ def heuristic(position):
     else:
         horizontal_cost = (col - goal_col) * 1
 
+    # Mahattan distance
     return vertical_cost + horizontal_cost
-
 
 def is_valid(position):
     row, col = position
@@ -50,7 +54,6 @@ def is_valid(position):
         return False
 
     return True
-
 
 def print_maze(labels):
     for row in range(ROWS):
@@ -70,7 +73,6 @@ def print_maze(labels):
 
         print(" ".join(line))
 
-
 def a_star_search():
     frontier = []
     explored = set()
@@ -79,32 +81,52 @@ def a_star_search():
     goal_cost = {start: 0}
 
     next_label = 1
+    insert_order = 1
+    final_path_cost = None
 
-    # heap stores: f, label, position
+    # Heap stores: f, insert_order, position
     heapq.heappush(frontier, (heuristic(start), 0, start))
 
     search_steps = []
-    
-    print('\n')
-    print("Searching...")
+
+    print("\nSearching...")
 
     while frontier:
-        f, label, current = heapq.heappop(frontier)
+        # Heappop returns the smallest f, which is the first element of the tuple
+        f, order, current = heapq.heappop(frontier)
 
         if current in explored:
             continue
 
+        # Label the square only when it is actually explored
+        if current not in labels:
+            labels[current] = next_label
+            next_label += 1
+
         explored.add(current)
 
+        current_label = labels[current]
+
         search_steps.append({
-            "label": label,
+            "label": current_label,
             "position": current,
             "g": goal_cost[current],
             "h": heuristic(current),
-            "f": f
+            "f": goal_cost[current] + heuristic(current)
         })
 
+        print("\n")
+        print_maze(labels)
+        print(
+            f"Label {current_label:02d}: "
+            f"Position {current}, "
+            f"g={goal_cost[current]}, "
+            f"h={heuristic(current)}, "
+            f"f={goal_cost[current] + heuristic(current)}"
+        )
+
         if current == goal:
+            final_path_cost = goal_cost[current]
             break
 
         for direction, change, move_cost in moves:
@@ -113,28 +135,27 @@ def a_star_search():
                 current[1] + change[1]
             )
 
-            if not is_valid(new_pos) or new_pos in explored or new_pos in labels:
+            if not is_valid(new_pos):
                 continue
 
+            if new_pos in explored:
+                continue
 
-            labels[new_pos] = next_label
-            goal_cost[new_pos] = goal_cost[current] + move_cost
+            new_goal_cost = goal_cost[current] + move_cost
 
-            new_f = goal_cost[new_pos] + heuristic(new_pos)
+            if new_pos not in goal_cost or new_goal_cost < goal_cost[new_pos]:
+                goal_cost[new_pos] = new_goal_cost
 
-            heapq.heappush(frontier, (new_f, next_label, new_pos))
+                # Calculate f = g + h for the new position
+                new_f = new_goal_cost + heuristic(new_pos)
 
-            next_label += 1
+                heapq.heappush(frontier, (new_f, insert_order, new_pos))
+                insert_order += 1
 
-        print('\n')
-        print_maze(labels)
-        print(
-            f"Label {search_steps[-1]['label']:02d}: "
-            f"Position {search_steps[-1]['position']}, "
-            f"g={search_steps[-1]['g']}, "
-            f"h={search_steps[-1]['h']}, "
-            f"f={search_steps[-1]['f']}"
-        )
+    print("\nFinal Maze:")
+    print_maze(labels)
+
+    print(f"\nFinal Path Cost: {final_path_cost}")
 
 
 a_star_search()
