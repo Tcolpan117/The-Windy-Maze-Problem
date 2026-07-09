@@ -74,6 +74,10 @@ def print_maze(labels):
         print(" ".join(line))
 
 def a_star_search():
+    # 3:
+    # The frontier is implemented as a priority queue using Python's heapq module.
+    # The explored set is implemented as a Python set, which is hash-table based.
+    # This allows the program to quickly check if a node has already been explored.
     frontier = []
     explored = set()
 
@@ -84,7 +88,7 @@ def a_star_search():
     insert_order = 1
     final_path_cost = None
 
-    # Heap stores: f, insert_order, position
+    # The priority queue removes the node with the smallest f(n) value first.
     heapq.heappush(frontier, (heuristic(start), 0, start))
 
     search_steps = []
@@ -92,7 +96,11 @@ def a_star_search():
     print("\nSearching...")
 
     while frontier:
-        # Heappop returns the smallest f, which is the first element of the tuple
+
+
+        #6:
+        # Pick and remove the node with the smallest f(n) value from the frontier.
+        # This is the key step of A* search.
         f, order, current = heapq.heappop(frontier)
 
         if current in explored:
@@ -129,6 +137,10 @@ def a_star_search():
             final_path_cost = goal_cost[current]
             break
 
+        # 5:
+        # This loop expands the current node by checking its child nodes,
+        # also called leaves, in the required order:
+        # west, north, east, and south.
         for direction, change, move_cost in moves:
             new_pos = (
                 current[0] + change[0],
@@ -141,14 +153,21 @@ def a_star_search():
             if new_pos in explored:
                 continue
 
+            # 4:
+            # Calculate g(n), which is the total path cost from the start node
+            # to this child node.
             new_goal_cost = goal_cost[current] + move_cost
 
             if new_pos not in goal_cost or new_goal_cost < goal_cost[new_pos]:
                 goal_cost[new_pos] = new_goal_cost
 
-                # Calculate f = g + h for the new position
+                # 4 Cont.:
+                # Calculate f(n) = g(n) + h(n).
+                # g(n) is the path cost so far.
+                # h(n) is the windy Manhattan heuristic estimate to the goal.
                 new_f = new_goal_cost + heuristic(new_pos)
 
+                # Adding the frontier
                 heapq.heappush(frontier, (new_f, insert_order, new_pos))
                 insert_order += 1
 
@@ -156,6 +175,5 @@ def a_star_search():
     print_maze(labels)
 
     print(f"\nFinal Path Cost: {final_path_cost}")
-
 
 a_star_search()
